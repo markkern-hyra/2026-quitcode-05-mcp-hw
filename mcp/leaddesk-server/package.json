@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "start": "node src/server.mjs"
+    "start": "node src/server.mjs",
+    "start:http": "node src/http.mjs"
   },
   "dependencies": {
     "@modelcontextprotocol/node": "2.1.0",

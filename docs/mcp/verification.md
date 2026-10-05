@@ -58,4 +58,65 @@
 
 ## Task E (бонус)
 
-Ще не виконано — варіант E1 (HTTP-сервер).
+- **Варіант:** E1 — сервер по HTTP із захистом Host/Origin.
+- **Код:** `mcp/leaddesk-server/src/http.mjs` — та сама `factory` з `src/leaddesk.mjs`, що й у stdio-входу:
+  `toNodeHandler(createMcpHandler(factory))`. Гварди `localhostHostValidation()` і `localhostOriginValidation()`
+  **викликано в обробнику запиту** до `mcp(req, res)` — опцією в `toNodeHandler` їх не передаємо, бо таку
+  опцію мовчки проігноровано. Слухає лише `127.0.0.1:3333` (`lsof` показав `TCP 127.0.0.1:3333 (LISTEN)`);
+  будь-який шлях, крім `/mcp`, — 404. Пакет `"@modelcontextprotocol/node": "2.1.0"` — точна версія в тому самому
+  `package.json`.
+- **Запуск:** `node mcp/leaddesk-server/src/http.mjs` → у stderr `leaddesk MCP over HTTP: http://127.0.0.1:3333/mcp`.
+- **Чотири відповіді `curl`** — команди дослівно з walkthrough (Task E, E1), bash на macOS. `body.json` лежав у
+  тимчасовій теці поза репозиторієм і в git не потрапив.
+
+  ```bash
+  printf '%s' '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{"_meta":{"io.modelcontextprotocol/protocolVersion":"2026-07-28","io.modelcontextprotocol/clientCapabilities":{}}}}' > body.json
+  H=(-H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "MCP-Protocol-Version: 2026-07-28" -H "Mcp-Method: tools/list")
+  ```
+
+  1. Справжній запит — **HTTP 200**, обидва інструменти з анотаціями (повна відповідь — нижче):
+
+     ```bash
+     curl -s -w '\nHTTP %{http_code}\n' "${H[@]}" --data-binary @body.json http://127.0.0.1:3333/mcp
+     ```
+
+  2. Підроблений `Host` — **HTTP 403**:
+
+     ```text
+     $ curl -s -w '\nHTTP %{http_code}\n' "${H[@]}" -H "Host: evil.example" --data-binary @body.json http://127.0.0.1:3333/mcp
+     {"jsonrpc":"2.0","error":{"code":-32000,"message":"Invalid Host: evil.example"},"id":null}
+     HTTP 403
+     ```
+
+  3. Підроблений `Origin` — **HTTP 403**:
+
+     ```text
+     $ curl -s -w '\nHTTP %{http_code}\n' "${H[@]}" -H "Origin: https://evil.example" --data-binary @body.json http://127.0.0.1:3333/mcp
+     {"jsonrpc":"2.0","error":{"code":-32000,"message":"Invalid Origin: evil.example"},"id":null}
+     HTTP 403
+     ```
+
+  4. Без заголовка `MCP-Protocol-Version` — **HTTP 400**, код **-32020**:
+
+     ```text
+     $ curl -s -w '\nHTTP %{http_code}\n' -H "Content-Type: application/json" -H "Accept: application/json, text/event-stream" -H "Mcp-Method: tools/list" --data-binary @body.json http://127.0.0.1:3333/mcp
+     {"jsonrpc":"2.0","error":{"code":-32020,"message":"Bad Request: the request headers and body disagree: the body envelope names protocol version 2026-07-28 but the required MCP-Protocol-Version header is absent","data":{"mismatch":{"header":"(missing)","body":"the body envelope names protocol version 2026-07-28 but the required MCP-Protocol-Version header is absent"}}},"id":1}
+     HTTP 400
+     ```
+
+  <details>
+  <summary>Повна відповідь запиту 1 (HTTP 200)</summary>
+
+  ```text
+  {"result":{"tools":[{"name":"leaddesk_find_leads","title":"Знайти ліди за статусом","description":"Повертає ліди LeadDesk із заданим статусом, найновіші першими: ідентифікатор, компанію, статус, джерело, бюджет (USD на місяць або null) і дату заявки. Імені, email і тексту заявки не повертає. Застосовуй, щоб побачити, хто на якому етапі, або знайти ідентифікатор ліда перед зміною статусу. Тільки читає, нічого не змінює.","inputSchema":{"type":"object","$schema":"https://json-schema.org/draft/2020-12/schema","properties":{"status":{"type":"string","enum":["new","contacted","qualified","won","lost","any"],"description":"Який статус шукати: new, contacted, qualified, won або lost; any — ліди в усіх статусах"},"limit":{"default":10,"description":"Скільки лідів повернути, від 1 до 50; за замовчуванням 10. Загальну кількість знайдених видно в total","type":"integer","minimum":1,"maximum":50}},"required":["status"]},"annotations":{"readOnlyHint":true,"openWorldHint":false}},{"name":"leaddesk_set_lead_status","title":"Змінити статус ліда","description":"ЗМІНЮЄ ДАНІ: переводить один лід LeadDesk у новий статус і пише запис в аудит (звідки, куди, коли і чому). Перед викликом покажи людині ідентифікатор, компанію, новий статус і причину та дочекайся її підтвердження. Статус new ставить лише застосунок, вручну його не встановлюють. Що означає кожен статус — у ресурсі leaddesk://reference/statuses.","inputSchema":{"type":"object","$schema":"https://json-schema.org/draft/2020-12/schema","properties":{"leadId":{"type":"string","pattern":"^lead_\\d{4}$","description":"Ідентифікатор ліда у форматі lead_0001, напр. lead_0002. Не знаєте ідентифікатора — знайдіть його через leaddesk_find_leads"},"status":{"type":"string","enum":["new","contacted","qualified","won","lost"],"description":"Новий статус: contacted, qualified, won або lost (new вручну не ставиться). Має відрізнятися від поточного"},"reason":{"type":"string","minLength":3,"maxLength":500,"description":"Чому змінюємо статус, 3–500 символів, напр. «зателефонували, клієнт чекає кошторис». Потрапляє в запис аудиту"}},"required":["leadId","status","reason"]},"annotations":{"readOnlyHint":false,"destructiveHint":false,"idempotentHint":false,"openWorldHint":false}}],"resultType":"complete","ttlMs":0,"cacheScope":"private","_meta":{"io.modelcontextprotocol/serverInfo":{"name":"leaddesk","version":"0.1.0"}}},"jsonrpc":"2.0","id":1}
+  HTTP 200
+  ```
+
+  </details>
+
+- **Що ще перевірили:** стан спільний для всіх запитів — після `leaddesk_set_lead_status` (`lead_0002` →
+  `contacted`) другий такий самий виклик по HTTP повернув `isError: true` «lead_0002 уже має статус contacted».
+- **Чого гварди не закривають:** автентифікації немає. Будь-який процес на цій машині, який може відкрити
+  `127.0.0.1:3333`, викликає обидва інструменти, зокрема зміну статусу, — і без жодного запиту на схвалення:
+  діалог показує клієнт (Claude Code), а не сервер. Тому HTTP-варіант — лише для локальної демонстрації; порт назовні
+  не відкриваємо (див. `docs/mcp/threat-model.md`).

@@ -60,3 +60,16 @@ claude mcp add leaddesk -- node "$(pwd)/mcp/leaddesk-server/src/server.mjs"
 Шлях — абсолютний: Claude Code запускає сервер не з вашої теки. Після підключення `/mcp` показує
 `leaddesk` із двома інструментами. `leaddesk_set_lead_status` не додавайте в `allow`: кожна зміна
 статусу має проходити через запит на схвалення.
+
+## HTTP-варіант (бонус E1)
+
+Та сама фабрика по Streamable HTTP, лише на `127.0.0.1:3333`, ендпоінт `/mcp`:
+
+```bash
+node mcp/leaddesk-server/src/http.mjs
+```
+
+Гварди `localhostHostValidation()` і `localhostOriginValidation()` з `@modelcontextprotocol/node` викликано в
+обробнику запиту: підроблений `Host` чи `Origin` отримує 403. Автентифікації немає — будь-який локальний процес
+може викликати обидва інструменти, тож порт назовні не відкривайте. Перевірка `curl` — у
+[`docs/mcp/verification.md`](../../docs/mcp/verification.md), розділ «Task E».
