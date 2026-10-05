@@ -1,0 +1,16 @@
+{
+  "mcpServers": {
+    "playwright": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@playwright/mcp@0.0.82",
+        "--isolated",
+        "--no-webmcp",
+        "--allowed-origins",
+        "http://localhost:3000"
+      ]
+    }
+  }
+}

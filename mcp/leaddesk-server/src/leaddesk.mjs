@@ -151,7 +151,7 @@ export const factory = () => {
   );
 
   server.registerResource(
-    "leaddesk-statuses",
+    "leaddesk_statuses",
     "leaddesk://reference/statuses",
     {
       title: "Статуси лідів LeadDesk",
