@@ -31,7 +31,7 @@ function loadLeads(rows) {
     if (!LEAD_STATUSES.includes(row.status)) throw bad(`невідомий статус у ${row.id}`);
     if (typeof row.company !== "string" || row.company === "") throw bad(`немає компанії в ${row.id}`);
     if (typeof row.source !== "string" || row.source === "") throw bad(`немає джерела в ${row.id}`);
-    if (row.budget !== null && !Number.isFinite(row.budget)) throw bad(`бюджет не число і не null у ${row.id}`);
+    if (row.budget !== null && !Number.isInteger(row.budget)) throw bad(`бюджет не ціле число і не null у ${row.id}`);
     if (typeof row.createdAt !== "string" || Number.isNaN(Date.parse(row.createdAt))) throw bad(`невалідна дата в ${row.id}`);
     leads.set(row.id, pick(row));
   });

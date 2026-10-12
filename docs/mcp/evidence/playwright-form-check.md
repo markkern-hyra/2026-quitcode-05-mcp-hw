@@ -43,7 +43,7 @@
 
 ## Консоль
 
-`browser_console_messages` двічі (до й після відправки) повернув те саме:
+`browser_console_messages` двічі (до й після надсилання) повернув те саме:
 
 ```text
 Total messages: 4 (Errors: 0, Warnings: 0)
@@ -85,7 +85,7 @@ Total messages: 4 (Errors: 0, Warnings: 0)
 23. [POST] http://localhost:3000/ => [200] OK
 ```
 
-- **Запит 23 — відправка форми:** `POST http://localhost:3000/`, `status: [200] OK`, `duration: 244ms`, `type: fetch`,
+- **Запит 23 — надсилання форми:** `POST http://localhost:3000/`, `status: [200] OK`, `duration: 244ms`, `type: fetch`,
   `mimeType: text/x-component`; у заголовках — `next-action` (виклик Server Action) і
   `content-type: multipart/form-data`.
 - **Тіло запиту** (`part: "request-body"`): службові поля Server Action і поля форми (`firstName`, `lastName`, `email`
@@ -98,7 +98,9 @@ Total messages: 4 (Errors: 0, Warnings: 0)
   1:{"status":"ok"}
   ```
 
-  Сервер повертає лише `{"status":"ok"}` — жодного з введених персональних даних.
+  Сама Server Action повертає об'єкт `{"status":"ok"}` (`app/actions.ts`, рядок 88); рядки `0:` і `1:D` перед ним — службові
+  кадри відповіді Next.js, тож `{"status":"ok"}` — не все тіло HTTP-відповіді. У показаному тілі немає жодного з введених
+  персональних даних.
 - Спостереження агента: варіант бюджету «$500–1500 / міс.» надсилається як `budget=1500`, тобто верхня межа діапазону.
 
 ## Що залишилось після перевірки
