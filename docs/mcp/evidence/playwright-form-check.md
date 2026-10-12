@@ -5,7 +5,7 @@
 - **Що було в `/mcp`:** `playwright` — ✔ connected, 25 tools; вбудований `computer-use` — ◯ вимкнений. Supabase і
   Vercel у цій сесії не завантажувались, конектори claude.ai вимкнено змінною оточення.
 - **Застосунок:** `npm run dev` цього репозиторію на `http://localhost:3000` (перед сесією перевірили, що порт
-  тримає саме LeadDesk: `<title>LeadDesk</title>`).
+  тримає саме LeadDesk: заголовок сторінки — «LeadDesk»).
 
 ## Запит
 
