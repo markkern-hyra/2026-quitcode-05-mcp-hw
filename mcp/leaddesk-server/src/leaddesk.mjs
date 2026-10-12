@@ -140,8 +140,8 @@ export const factory = () => {
       lead.status = status;
       const audit = { action: "lead.status_changed", leadId, at: new Date().toISOString(), from, to: status, reason };
       auditLog.push(audit);
-      // stderr only: stdout is the protocol channel. Ids and statuses, no personal data.
-      console.error(`audit #${auditLog.length}: ${audit.action} ${leadId} ${from} -> ${status}`);
+      // stderr only: stdout is the protocol channel. Action and statuses only; the full entry is in the result.
+      console.error(`audit #${auditLog.length}: ${audit.action} ${from} -> ${status}`);
 
       return {
         content: [{ type: "text", text: `${leadId} (${lead.company}): ${from} → ${status}. Запис аудиту: ${audit.action}, ${audit.at}.` }],
